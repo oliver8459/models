@@ -458,11 +458,11 @@ def shufflenet_v2_block(x, out_channel, kernel_size, stride=1, dilation=1, shuff
 
 
 
-# def shuffle_unit(x, groups, name):
-#     n, h, w, c = x.get_shape().as_list()
-#     x = tf.reshape(x, shape=tf.convert_to_tensor([n, h, w, groups, c//groups]))
-#     x = tf.transpose(x, tf.convert_to_tensor([3, 0, 1, 2, 4]), name=name)
-#     return x[0], x[1]
+def shuffle_unit(x, groups, name):
+    n, h, w, c = x.get_shape().as_list()
+    x = tf.reshape(x, shape=tf.convert_to_tensor([n, h, w, groups, c//groups]))
+    x = tf.transpose(x, tf.convert_to_tensor([3, 0, 1, 2, 4]), name=name)
+    return x[0], x[1]
 
 
 """
@@ -472,9 +472,9 @@ squeezing the first channel to 4-D is neccessary before exporting to inference g
 usage: use new shuffle_unit() replace the older one, and recompile proto
 cd ${models}/research && protoc object_detection/protos/*.proto --python_out=.
 """
-def shuffle_unit(x, groups, name):
-    n, h, w, c = x.get_shape().as_list()
-    x = tf.squeeze(x)
-    x = tf.reshape(x, shape=tf.convert_to_tensor([h, w, groups, c//groups]))
-    x = tf.transpose(x, tf.convert_to_tensor([2, 0, 1, 3]))
-    return tf.expand_dims(x[0], axis=0, name=name), tf.expand_dims(x[1], axis=0, name=name)
+# def shuffle_unit(x, groups, name):
+#     n, h, w, c = x.get_shape().as_list()
+#     x = tf.squeeze(x)
+#     x = tf.reshape(x, shape=tf.convert_to_tensor([h, w, groups, c//groups]))
+#     x = tf.transpose(x, tf.convert_to_tensor([2, 0, 1, 3]))
+#     return tf.expand_dims(x[0], axis=0, name=name), tf.expand_dims(x[1], axis=0, name=name)
