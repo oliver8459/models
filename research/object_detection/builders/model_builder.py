@@ -66,6 +66,7 @@ if tf_version.is_tf2():
     from object_detection.models import ssd_efficientnet_bifpn_feature_extractor as ssd_efficientnet_bifpn
 
 if tf_version.is_tf1():
+  from object_detection.models.ssd_shufflenet_v2_feature_extractor import SSDShuffleNetV2FeatureExtractor
   from object_detection.models import faster_rcnn_inception_resnet_v2_feature_extractor as frcnn_inc_res
   from object_detection.models import faster_rcnn_inception_v2_feature_extractor as frcnn_inc_v2
   from object_detection.models import faster_rcnn_nas_feature_extractor as frcnn_nas
@@ -172,6 +173,8 @@ if tf_version.is_tf2():
 
 if tf_version.is_tf1():
   SSD_FEATURE_EXTRACTOR_CLASS_MAP = {
+      'ssd_shufflenet_v2':
+          SSDShuffleNetV2FeatureExtractor,
       'ssd_inception_v2':
           SSDInceptionV2FeatureExtractor,
       'ssd_inception_v3':
