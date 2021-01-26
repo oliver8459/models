@@ -432,7 +432,7 @@ def shufflenet_v2_arg_scope(
 
 def shufflenet_v2_block(x, out_channel, kernel_size, stride=1, dilation=1, shuffle_group=2, name=None):
     if stride == 1:
-        top, bottom = shuffle_unit(x, shuffle_group, name)
+        top, bottom = tf.split(x, num_or_size_splits=2, axis=3)
         half_channel = out_channel // 2
 
         top = slim.conv2d(top, half_channel, kernel_size=1, stride=stride)
@@ -441,6 +441,7 @@ def shufflenet_v2_block(x, out_channel, kernel_size, stride=1, dilation=1, shuff
         top = slim.conv2d(top, half_channel, kernel_size=1, stride=stride)
 
         out = tf.concat([top, bottom], axis=3)
+        out = shuffle_unit(out, shuffle_group, name)
 
     else:
         half_channel = out_channel // 2
@@ -454,16 +455,24 @@ def shufflenet_v2_block(x, out_channel, kernel_size, stride=1, dilation=1, shuff
         b1 = slim.conv2d(b1, half_channel, kernel_size=1, stride=1)
 
         out = tf.concat([b0, b1], axis=3)
+        out = shuffle_unit(out, shuffle_group, name)
     return out
 
 
+# 不会用到tf.split 但是loss不下降 
+# def shuffle_unit(x, groups, name):
+#     n, h, w, c = x.get_shape().as_list()
+#     x = tf.reshape(x, shape=tf.convert_to_tensor([n, h, w, groups, c//groups]))
+#     x = tf.transpose(x, tf.convert_to_tensor([3, 0, 1, 2, 4]), name=name)
+#     return x[0], x[1]
 
+# 会用到tf.split tensorflow1.13转tflite不能用
 def shuffle_unit(x, groups, name):
     n, h, w, c = x.get_shape().as_list()
     x = tf.reshape(x, shape=tf.convert_to_tensor([n, h, w, groups, c//groups]))
-    x = tf.transpose(x, tf.convert_to_tensor([3, 0, 1, 2, 4]), name=name)
-    return x[0], x[1]
-
+    x = tf.transpose(x, tf.convert_to_tensor([0, 1, 2, 4, 3]), name=name)
+    x = tf.reshape(x, shape=tf.convert_to_tensor([n, h, w, c]))
+    return x
 
 """
 ShuffleNet contains 5-D tensor.If need to convert ot tflite model, 
@@ -472,9 +481,19 @@ squeezing the first channel to 4-D is neccessary before exporting to inference g
 usage: use new shuffle_unit() replace the older one, and recompile proto
 cd ${models}/research && protoc object_detection/protos/*.proto --python_out=.
 """
+# 不会用到tf.split 但是loss不下降 
 # def shuffle_unit(x, groups, name):
 #     n, h, w, c = x.get_shape().as_list()
 #     x = tf.squeeze(x)
 #     x = tf.reshape(x, shape=tf.convert_to_tensor([h, w, groups, c//groups]))
 #     x = tf.transpose(x, tf.convert_to_tensor([2, 0, 1, 3]))
 #     return tf.expand_dims(x[0], axis=0, name=name), tf.expand_dims(x[1], axis=0, name=name)
+
+# 会用到tf.split tensorflow1.13转tflite不能用
+# def shuffle_unit(x, groups, name):
+#     n, h, w, c = x.get_shape().as_list()
+#     x = tf.squeeze(x)
+#     x = tf.reshape(x, shape=tf.convert_to_tensor([h, w, groups, c//groups]))
+#     x = tf.transpose(x, tf.convert_to_tensor([0, 1, 3, 2]), name=name)
+#     x = tf.reshape(x, shape=tf.convert_to_tensor([n, h, w, c]))
+#     return x
